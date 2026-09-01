@@ -36,6 +36,50 @@ static int cmd_q(char *args) {
 	return -1;
 }
 
+static int cmd_si(char *args) {
+	int n = 1;
+	if(args != NULL) {
+		sscanf(args, "%d", &n);
+	}
+	cpu_exec(n);
+	return 0;
+}
+
+static int cmd_info(char *args) {
+	if(args == NULL) {
+		printf("Usage: info r\n");
+		return 0;
+	}
+
+	if(strcmp(args, "r") == 0) {
+		int i;
+		printf("Register value:\n");
+		for(i = 0; i < 8; i ++) {
+			printf("%-5s 0x%08x\n", regsl[i], reg_l(i));
+		}
+		printf("%-5s 0x%08x\n", "eip", cpu.eip);
+	}
+	else {
+		printf("Unknown subcommand '%s'\n", args);
+	}
+	return 0;
+}
+
+static int cmd_x(char *args) {
+	int n;
+	uint32_t addr;
+	if(args == NULL || sscanf(args, "%d %x", &n, &addr) < 2) {
+		printf("Usage: x N ADDR\n");
+		return 0;
+	}
+
+	int i;
+	for(i = 0; i < n; i ++) {
+		printf("0x%08x: 0x%08x\n", addr + 4 * i, swaddr_read(addr + 4 * i, 4));
+	}
+	return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -46,8 +90,9 @@ static struct {
 	{ "help", "Display informations about all supported commands", cmd_help },
 	{ "c", "Continue the execution of the program", cmd_c },
 	{ "q", "Exit NEMU", cmd_q },
-
-	/* TODO: Add more commands */
+	{ "si", "Run N instructions", cmd_si },
+	{ "info", "Print the register status (subcommand: r)", cmd_info },
+	{ "x", "Examine memory", cmd_x },
 
 };
 

@@ -67,15 +67,36 @@ static int cmd_info(char *args) {
 
 static int cmd_x(char *args) {
 	int n;
-	uint32_t addr;
-	if(args == NULL || sscanf(args, "%d %x", &n, &addr) < 2) {
-		printf("Usage: x N ADDR\n");
+	int consumed = 0;
+	if(args == NULL || sscanf(args, "%d %n", &n, &consumed) < 1) {
+		printf("Usage: x N EXPR\n");
+		return 0;
+	}
+
+	char *expr_args = args + consumed;
+	bool success;
+	uint32_t addr = expr(expr_args, &success);
+	if(!success) {
 		return 0;
 	}
 
 	int i;
 	for(i = 0; i < n; i ++) {
 		printf("0x%08x: 0x%08x\n", addr + 4 * i, swaddr_read(addr + 4 * i, 4));
+	}
+	return 0;
+}
+
+static int cmd_p(char *args) {
+	if(args == NULL) {
+		printf("Usage: p EXPR\n");
+		return 0;
+	}
+
+	bool success;
+	uint32_t result = expr(args, &success);
+	if(success) {
+		printf("%u\n", result);
 	}
 	return 0;
 }
@@ -92,7 +113,8 @@ static struct {
 	{ "q", "Exit NEMU", cmd_q },
 	{ "si", "Run N instructions", cmd_si },
 	{ "info", "Print the register status (subcommand: r)", cmd_info },
-	{ "x", "Examine memory", cmd_x },
+	{ "x", "Examine memory (x N EXPR)", cmd_x },
+	{ "p", "Evaluate an expression", cmd_p },
 
 };
 

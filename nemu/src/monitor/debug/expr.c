@@ -167,8 +167,16 @@ static int dominant_operator(int p, int q) {
 		else if(depth == 0 && i > p) {
 			int prio = priority(tokens[i].type);
 			if(prio >= 0 && prio <= min_prio) {
-				min_prio = prio;
-				op = i;
+				/* an operator is binary only if it follows an
+				 * operand (number, register or ')'). Otherwise
+				 * it is a unary operator (e.g. '-', '*'), which
+				 * should not be a candidate of the dominant one.
+				 */
+				int prev = tokens[i - 1].type;
+				if(prev == NUM || prev == REG || prev == ')') {
+					min_prio = prio;
+					op = i;
+				}
 			}
 		}
 	}

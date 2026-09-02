@@ -26,7 +26,7 @@ static struct rule {
 	{"<=",	LEQ},					// less or equal
 	{">=",	GEQ},					// greater or equal
 	{"&&",	AND},					// logical and
-	{"||",	OR},					// logical or
+	{"\\|\\|",	OR},				// logical or
 	{"<",	LT},					// less than
 	{">",	GT},					// greater than
 	{"\\+",	'+'},					// plus

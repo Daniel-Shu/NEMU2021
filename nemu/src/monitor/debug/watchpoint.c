@@ -98,7 +98,7 @@ void wp_test() {
 		bool success;
 		uint32_t value = expr(wp->EXPR, &success);
 		if(success && value != wp->VALUE) {
-			printf("Hit watchpoint %d at address 0x%08x\n", wp->NO, cpu.eip);
+			printf("Hint watchpoint %d at address 0x%08x\n", wp->NO, cpu.eip);
 			wp->VALUE = value;
 			changed = true;
 		}

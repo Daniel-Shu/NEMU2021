@@ -88,7 +88,7 @@ static bool make_token(char *e) {
 				if(rules[i].token_type == NOTYPE) {
 					/* do nothing, just skip it */
 				}
-				else if(nr_token >= 32) {
+				else if(nr_token >= 128) {
 					printf("too many tokens\n");
 					return false;
 				}

@@ -1,6 +1,7 @@
 #include "monitor/watchpoint.h"
 #include "monitor/expr.h"
 #include "monitor/monitor.h"
+#include "nemu.h"
 
 #define NR_WP 32
 
@@ -97,6 +98,7 @@ void wp_test() {
 		bool success;
 		uint32_t value = expr(wp->EXPR, &success);
 		if(success && value != wp->VALUE) {
+			printf("Hit watchpoint %d at address 0x%08x\n", wp->NO, cpu.eip);
 			printf("\033[1;31mHIT WATCHPOINT %d: %s = 0x%08x -> 0x%08x\033[0m\n", wp->NO, wp->EXPR, wp->VALUE, value);
 			wp->VALUE = value;
 			changed = true;

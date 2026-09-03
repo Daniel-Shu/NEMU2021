@@ -9,7 +9,7 @@
 
 enum {
 	NOTYPE = 256, EQ, NEQ, LEQ, GEQ, LT, GT, AND, OR,
-	NUM, REG
+	NUM, REG, NOT
 };
 
 static struct rule {
@@ -23,6 +23,7 @@ static struct rule {
 	{"\\$[a-zA-Z0-9]+",	REG},		// register
 	{"==",	EQ},					// equal
 	{"!=",	NEQ},					// not equal
+	{"!",	NOT},					// logical not
 	{"<=",	LEQ},					// less or equal
 	{">=",	GEQ},					// greater or equal
 	{"&&",	AND},					// logical and
@@ -233,6 +234,10 @@ static uint32_t eval(int p, int q, bool *success) {
 		if(tokens[p].type == '*') {
 			/* pointer dereference */
 			return swaddr_read(eval(p + 1, q, success), 4);
+		}
+		if(tokens[p].type == NOT) {
+			/* logical not */
+			return !eval(p + 1, q, success);
 		}
 		*success = false;
 		return 0;

@@ -1,4 +1,5 @@
 #include "monitor/monitor.h"
+#include "monitor/watchpoint.h"
 #include "cpu/helper.h"
 #include <setjmp.h>
 
@@ -72,7 +73,8 @@ void cpu_exec(volatile uint32_t n) {
 		}
 #endif
 
-		/* TODO: check watchpoints here. */
+		/* check watchpoints here. */
+		wp_test();
 
 
 #ifdef HAS_DEVICE

@@ -47,7 +47,7 @@ static int cmd_si(char *args) {
 
 static int cmd_info(char *args) {
 	if(args == NULL) {
-		printf("Usage: info r\n");
+		printf("Usage: info r | w\n");
 		return 0;
 	}
 
@@ -59,9 +59,36 @@ static int cmd_info(char *args) {
 		}
 		printf("%-5s 0x%08x\n", "eip", cpu.eip);
 	}
+	else if(strcmp(args, "w") == 0) {
+		display_wp();
+	}
 	else {
 		printf("Unknown subcommand '%s'\n", args);
 	}
+	return 0;
+}
+
+static int cmd_w(char *args) {
+	if(args == NULL) {
+		printf("Usage: w EXPR\n");
+		return 0;
+	}
+
+	WP *wp = new_wp(args);
+	if(wp != NULL) {
+		printf("Watchpoint %d: %s\n", wp->NO, wp->EXPR);
+	}
+	return 0;
+}
+
+static int cmd_d(char *args) {
+	int no;
+	if(args == NULL || sscanf(args, "%d", &no) != 1) {
+		printf("Usage: d N\n");
+		return 0;
+	}
+
+	free_wp(no);
 	return 0;
 }
 
@@ -112,9 +139,11 @@ static struct {
 	{ "c", "Continue the execution of the program", cmd_c },
 	{ "q", "Exit NEMU", cmd_q },
 	{ "si", "Run N instructions", cmd_si },
-	{ "info", "Print the register status (subcommand: r)", cmd_info },
+	{ "info", "Print the register status (subcommand: r|w)", cmd_info },
 	{ "x", "Examine memory (x N EXPR)", cmd_x },
 	{ "p", "Evaluate an expression", cmd_p },
+	{ "w", "Set a watchpoint (w EXPR)", cmd_w },
+	{ "d", "Delete a watchpoint (d N)", cmd_d },
 
 };
 

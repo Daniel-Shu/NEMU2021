@@ -84,6 +84,10 @@ void restart() {
 	/* Read the entry code into memory. */
 	load_entry();
 
+	/* The CPU state should be initialized before executing the program.
+	 * Note that reg_test() may have polluted the CPU with random values. */
+	memset(&cpu, 0, sizeof(cpu));
+
 	/* Set the initial instruction pointer. */
 	cpu.eip = ENTRY_START;
 

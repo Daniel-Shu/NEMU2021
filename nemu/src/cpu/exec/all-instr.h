@@ -31,6 +31,7 @@
 #include "control/jg.h"
 #include "control/call.h"
 #include "control/ret.h"
+#include "control/leave.h"
 #include "control/push.h"
 #include "control/pop.h"
 

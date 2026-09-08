@@ -4,10 +4,8 @@
 
 make_helper(concat(ret_n_, SUFFIX)) {
 	/* cpu_exec() will advance cpu.eip by the value we return here. */
-	printf("DBG ret esp0=0x%x\n", cpu.esp);
 	cpu.eip = MEM_R(reg_l(R_ESP)) - 1;
 	reg_l(R_ESP) += DATA_BYTE;
-	printf("DBG ret esp1=0x%x\n", cpu.esp);
 	print_asm("ret");
 	return 1;
 }

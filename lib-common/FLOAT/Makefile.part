@@ -8,9 +8,14 @@ FLOAT_A_OBJ := $(FLOAT_O) $(FLOAT_VFPRINTF_O)
 $(FLOAT): $(FLOAT_A_OBJ)
 	ar r $@ $^
 
-# TODO: complete the following rules
+# Build the FLOAT library (fixed point 16.16 format)
 
-$(FLOAT_O):
+FLOAT_CFLAGS := -O2 -m32 -fno-builtin -fno-stack-protector -march=i386
 
-$(FLOAT_VFPRINTF_O):
+$(FLOAT_O): lib-common/FLOAT/FLOAT.c lib-common/FLOAT.h
+	mkdir -p obj/lib-common/FLOAT
+	$(CC) $(FLOAT_CFLAGS) -c lib-common/FLOAT/FLOAT.c -o $(FLOAT_O) -Ilib-common
 
+$(FLOAT_VFPRINTF_O): lib-common/FLOAT/FLOAT_vfprintf.c lib-common/FLOAT.h
+	mkdir -p obj/lib-common/FLOAT
+	$(CC) $(FLOAT_CFLAGS) -c lib-common/FLOAT/FLOAT_vfprintf.c -o $(FLOAT_VFPRINTF_O) -Ilib-common

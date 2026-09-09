@@ -12,4 +12,5 @@
 /* for instruction encoding overloading */
 
 
+make_helper_v(adc_i2a)
 make_helper_v(adc_r2rm)

@@ -1,8 +1,7 @@
 #include "FLOAT.h"
 
 FLOAT F_mul_F(FLOAT a, FLOAT b) {
-	nemu_assert(0);
-	return 0;
+	return (FLOAT)(((long long)a * (long long)b) >> 16);
 }
 
 FLOAT F_div_F(FLOAT a, FLOAT b) {
@@ -14,18 +13,35 @@ FLOAT F_div_F(FLOAT a, FLOAT b) {
 	 * To perform a "64/32" division, you can use the x86 instruction
 	 * `div' or `idiv' by inline assembly. We provide a template for you
 	 * to prevent you from uncessary details.
-	 *
-	 *     asm volatile ("??? %2" : "=a"(???), "=d"(???) : "r"(???), "a"(???), "d"(???));
-	 *
-	 * If you want to use the template above, you should fill the "???"
-	 * correctly. For more information, please read the i386 manual for
-	 * division instructions, and search the Internet about "inline assembly".
-	 * It is OK not to use the template above, but you should figure
-	 * out another way to perform the division.
 	 */
 
-	nemu_assert(0);
-	return 0;
+	/* Do the division in the way of "long division" on bits.
+	 * Binary numbers are friendly: a bit of the quotient is
+	 * derived by comparing the current remainder with the divisor. */
+	int sign = 1;
+	if (a < 0) {
+		sign = -sign;
+		a = -a;
+	}
+	if (b < 0) {
+		sign = -sign;
+		b = -b;
+	}
+
+	int res = a / b;
+	a = a % b;
+
+	int i;
+	for (i = 0; i < 16; i ++) {
+		a <<= 1;
+		res <<= 1;
+		if (a >= b) {
+			a = a - b;
+			res ++;
+		}
+	}
+
+	return res * sign;
 }
 
 FLOAT f2F(float a) {
@@ -39,13 +55,30 @@ FLOAT f2F(float a) {
 	 * performing arithmetic operations on it directly?
 	 */
 
-	nemu_assert(0);
-	return 0;
+	/* Fetch the bit representation via a pointer cast.
+	 * No x87 instructions will be generated. */
+	int b = *(int *)&a;
+	int sign = b >> 31;
+	int exp = (b >> 23) & 0xff;
+	int x = b & 0x7fffff;
+
+	if (exp != 0) {
+		x += 1 << 23;
+	}
+	exp -= 150;
+
+	if (exp < -16) {
+		x >>= -16 - exp;
+	}
+	if (exp > -16) {
+		x <<= 16 + exp;
+	}
+
+	return sign == 0 ? x : -x;
 }
 
 FLOAT Fabs(FLOAT a) {
-	nemu_assert(0);
-	return 0;
+	return a < 0 ? -a : a;
 }
 
 /* Functions below are already implemented */
@@ -73,4 +106,3 @@ FLOAT pow(FLOAT x, FLOAT y) {
 
 	return t;
 }
-

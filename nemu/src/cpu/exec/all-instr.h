@@ -29,6 +29,8 @@
 #include "control/jge.h"
 #include "control/jle.h"
 #include "control/jg.h"
+#include "control/jb.h"
+#include "control/jae.h"
 #include "control/call.h"
 #include "control/ret.h"
 #include "control/leave.h"

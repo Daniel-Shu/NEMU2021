@@ -10,7 +10,8 @@ $(FLOAT): $(FLOAT_A_OBJ)
 
 # Build the FLOAT library (fixed point 16.16 format)
 
-FLOAT_CFLAGS := -O2 -m32 -fno-builtin -fno-stack-protector -march=i386
+FLOAT_CFLAGS := -O2 -m32 -fno-builtin -fno-stack-protector -Wno-format -march=i386 \
+				-Ilib-common -Ilib-common/uclibc/include
 
 $(FLOAT_O): lib-common/FLOAT/FLOAT.c lib-common/FLOAT.h
 	mkdir -p obj/lib-common/FLOAT

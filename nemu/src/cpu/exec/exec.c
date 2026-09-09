@@ -49,8 +49,8 @@ make_group(group2_1_b,
 
 /* 0xd1 */
 make_group(group2_1_v,
-	inv, inv, inv, inv, 
-	inv, inv, inv, sar_rm_1_v)
+	inv, inv, inv, inv,
+	shl_rm_1_v, shr_rm_1_v, sar_rm_1_v, sar_rm_1_v)
 
 /* 0xd2 */
 make_group(group2_cl_b,

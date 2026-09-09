@@ -68,12 +68,14 @@ static void modify_vfprintf() {
 	}
 
 	/* redirect the call to `_fpmaxtostr' to `format_FLOAT' */
+	int hit = 0;
 	for (i = 0; i < 0x400; i ++) {
 		if (p[i] == 0xe8) {
 			int32_t rel = *(int32_t *)(p + i + 1);
 			if ((p + i + 5 + rel) == (uint8_t *)&_fpmaxtostr) {
 				*(int32_t *)(p + i + 1) =
 					(int32_t)((uint8_t *)format_FLOAT - (p + i + 5));
+				hit = 1;
 				break;
 			}
 		}
@@ -96,6 +98,7 @@ static void modify_ppfs_setargs() {
 	                     0x89, 0x58, 0x4c, 0xdd, 0x19, /* mov; fstpl */
 	                     0xeb, 0x42};                 /* jmp +0x42 */
 	int i, j;
+	int hit = 0;
 
 	for (i = 0; i < 0x400; i ++) {
 		if (memcmp(p + i, pattern, sizeof(pattern)) == 0) {
@@ -108,6 +111,7 @@ static void modify_ppfs_setargs() {
 			for (j = 7; j < (int)sizeof(pattern); j ++) {
 				p[i + j] = 0x90;
 			}
+			hit = 1;
 			break;
 		}
 	}

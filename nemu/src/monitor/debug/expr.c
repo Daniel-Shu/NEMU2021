@@ -9,8 +9,11 @@
 
 enum {
 	NOTYPE = 256, EQ, NEQ, LEQ, GEQ, LT, GT, AND, OR,
-	NUM, REG, NOT
+	NUM, REG, NOT, VARIABLE
 };
+
+/* Look up a symbol in the ELF symbol table, see elf.c for details. */
+uint32_t look_up_symtab(char *sym, bool *success);
 
 static struct rule {
 	char *regex;
@@ -21,6 +24,7 @@ static struct rule {
 	{"0[xX][0-9a-fA-F]+",	NUM},	// hexadecimal number
 	{"[0-9]+",	NUM},				// decimal number
 	{"\\$[a-zA-Z0-9]+",	REG},		// register
+	{"[a-zA-Z_][a-zA-Z0-9_]*",	VARIABLE},	// variable
 	{"==",	EQ},					// equal
 	{"!=",	NEQ},					// not equal
 	{"!",	NOT},					// logical not

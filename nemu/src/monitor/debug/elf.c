@@ -8,6 +8,26 @@ static char *strtab = NULL;
 static Elf32_Sym *symtab = NULL;
 static int nr_symtab_entry;
 
+/* Look up the address of a symbol (a variable or a function) in the
+ * symbol table of the executable file. `success' is set to false if
+ * the symbol does not exist.
+ */
+uint32_t look_up_symtab(char *sym, bool *success) {
+	int i;
+
+	for(i = 0; i < nr_symtab_entry; i ++) {
+		int type = ELF32_ST_TYPE(symtab[i].st_info);
+		if((type == STT_OBJECT || type == STT_FUNC)
+				&& strcmp(strtab + symtab[i].st_name, sym) == 0) {
+			*success = true;
+			return symtab[i].st_value;
+		}
+	}
+
+	*success = false;
+	return 0;
+}
+
 void load_elf_tables(int argc, char *argv[]) {
 	int ret;
 	Assert(argc == 2, "run NEMU with format 'nemu [program]'");

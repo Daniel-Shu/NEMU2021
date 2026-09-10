@@ -178,7 +178,7 @@ static int dominant_operator(int p, int q) {
 				 * should not be a candidate of the dominant one.
 				 */
 				int prev = tokens[i - 1].type;
-				if(prev == NUM || prev == REG || prev == ')') {
+				if(prev == NUM || prev == REG || prev == VARIABLE || prev == ')') {
 					min_prio = prio;
 					op = i;
 				}
@@ -213,6 +213,10 @@ static uint32_t eval(int p, int q, bool *success) {
 		}
 		if(tokens[p].type == REG) {
 			return eval_reg(p);
+		}
+		if(tokens[p].type == VARIABLE) {
+			/* the value of a variable is its address */
+			return look_up_symtab(tokens[p].str, success);
 		}
 		*success = false;
 		return 0;

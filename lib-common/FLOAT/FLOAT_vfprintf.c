@@ -44,6 +44,7 @@ static void modify_vfprintf() {
 	uint8_t fldt_fldl[] = {0xdb, 0x2a, 0xeb, 0x02, 0xdd, 0x02};
 	uint8_t fstpt[] = {0xdb, 0x3c, 0x24};
 	int i;
+	int store = -1;
 
 	/* fldt (%edx); jmp; fldl (%edx): load the FLOAT value
 	 * into %eax instead (movl (%edx),%eax) */
@@ -63,7 +64,24 @@ static void modify_vfprintf() {
 			p[i + 0] = 0x89;
 			p[i + 1] = 0x04;
 			p[i + 2] = 0x24;
+			store = i;
 			break;
+		}
+	}
+
+	/* An address of a buffer is loaded into %eax by a
+	 * `lea disp(%esp),%eax; push %eax' pair just before the store.
+	 * It would clobber the FLOAT value in %eax, so move the address
+	 * to %ecx (`lea disp(%esp),%ecx; push %ecx'), leaving %eax
+	 * holding the value. */
+	if(store >= 16) {
+		for (i = store - 16; i < store; i ++) {
+			if(p[i] == 0x8d && p[i + 1] == 0x84 && p[i + 2] == 0x24
+					&& p[i + 7] == 0x50) {
+				p[i + 1] = 0x8c;	/* lea disp(%esp),%ecx */
+				p[i + 7] = 0x51;	/* push %ecx */
+				break;
+			}
 		}
 	}
 

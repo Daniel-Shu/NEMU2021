@@ -43,12 +43,16 @@ static void read_block_from_dram(hwaddr_t addr, uint8_t *data) {
 	}
 }
 
+/* The set and the tag of the block containing `addr'. Both are worked
+ * out with the geometry of the cache, so that they follow it when the
+ * macros in cache.h are given other values.
+ */
 static uint32_t block_set(hwaddr_t addr) {
-	return (addr >> CACHE_BOFF_WIDTH) & (CACHE_SET_NR - 1);
+	return (addr / CACHE_BLOCK_SIZE) % CACHE_SET_NR;
 }
 
 static uint32_t block_tag(hwaddr_t addr) {
-	return addr >> (CACHE_BOFF_WIDTH + CACHE_SET_WIDTH);
+	return addr / (CACHE_BLOCK_SIZE * CACHE_SET_NR);
 }
 
 /* Look for the block containing `addr' in the set it belongs to.

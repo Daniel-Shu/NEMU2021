@@ -16,12 +16,10 @@
 #define CACHE_SET_NR (CACHE_BLOCK_NR / CACHE_WAYS)
 #define CACHE_BOFF_MASK (CACHE_BLOCK_SIZE - 1)
 
-/* A physical address is split into | tag | set | block offset |.
- * The widths of the fields must agree with the geometry above.
+/* A physical address is split into | tag | set | block offset |, where
+ * the set and the tag are worked out by dividing the address, so that
+ * any geometry above is accepted.
  */
-#define CACHE_BOFF_WIDTH 6	/* 2^6 == CACHE_BLOCK_SIZE */
-#define CACHE_SET_WIDTH 7	/* 2^7 == CACHE_SET_NR */
-#define CACHE_TAG_WIDTH (32 - CACHE_SET_WIDTH - CACHE_BOFF_WIDTH)
 
 /* How much an access to the cache costs, in CPU cycles. */
 #define CACHE_HIT_CYCLES 2

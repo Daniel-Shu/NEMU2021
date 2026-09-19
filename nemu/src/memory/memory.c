@@ -1,16 +1,18 @@
 #include "common.h"
 
-uint32_t dram_read(hwaddr_t, size_t);
-void dram_write(hwaddr_t, size_t, uint32_t);
+uint32_t sram_read(hwaddr_t, size_t);
+void sram_write(hwaddr_t, size_t, uint32_t);
 
-/* Memory accessing interfaces */
+/* Memory accessing interfaces. The CPU talks to the cache, and DRAM is
+ * only accessed when the cache misses.
+ */
 
 uint32_t hwaddr_read(hwaddr_t addr, size_t len) {
-	return dram_read(addr, len) & (~0u >> ((4 - len) << 3));
+	return sram_read(addr, len);
 }
 
 void hwaddr_write(hwaddr_t addr, size_t len, uint32_t data) {
-	dram_write(addr, len, data);
+	sram_write(addr, len, data);
 }
 
 uint32_t lnaddr_read(lnaddr_t addr, size_t len) {

@@ -32,17 +32,6 @@ void init_cache() {
 	srand(time(0));
 }
 
-/* Read the whole block containing the aligned address `addr' from DRAM. */
-static void read_block_from_dram(hwaddr_t addr, uint8_t *data) {
-	int i;
-
-	/* A block is aligned, so reading it 4 bytes at a time never crosses
-	 * the boundary of a burst. */
-	for(i = 0; i < CACHE_BLOCK_SIZE; i += 4) {
-		*(uint32_t *)(data + i) = dram_read(addr + i, 4);
-	}
-}
-
 static uint32_t block_set(hwaddr_t addr) {
 	return (addr >> CACHE_BOFF_WIDTH) & (CACHE_SET_NR - 1);
 }
@@ -51,8 +40,8 @@ static uint32_t block_tag(hwaddr_t addr) {
 	return addr >> (CACHE_BOFF_WIDTH + CACHE_SET_WIDTH);
 }
 
-/* Look for the block containing `addr' in the set it belongs to.
- * Return the index of the block, or -1 if it is not in the cache.
+/* Look for the block containing the aligned address `addr' in the set it
+ * belongs to. Return the index of the block, or -1 if it is not there.
  */
 static int probe(hwaddr_t addr) {
 	uint32_t set = block_set(addr);
@@ -67,9 +56,19 @@ static int probe(hwaddr_t addr) {
 	return -1;
 }
 
+/* Read the whole block containing the aligned address `addr' from DRAM. */
+static void read_block_from_dram(hwaddr_t addr, uint8_t *data) {
+	int i;
+
+	/* The block is aligned, so reading it 4 bytes at a time never
+	 * crosses the boundary of a burst. */
+	for(i = 0; i < CACHE_BLOCK_SIZE; i += 4) {
+		*(uint32_t *)(data + i) = dram_read(addr + i, 4);
+	}
+}
+
 /* Take the block containing the aligned address `addr' in, by putting it
- * into a randomly chosen way of the set it belongs to. Return the index
- * of the block it is put in.
+ * into a randomly chosen way of the set it belongs to.
  */
 static int fill(hwaddr_t addr) {
 	int idx = block_set(addr) * CACHE_WAYS + rand() % CACHE_WAYS;
@@ -81,83 +80,74 @@ static int fill(hwaddr_t addr) {
 	return idx;
 }
 
-/* Read the whole block containing `addr' into `data'. */
-static void read_block(hwaddr_t addr, uint8_t *data) {
-	hwaddr_t block = addr & ~CACHE_BOFF_MASK;
-	int idx = probe(block);
+/* Access the block containing the aligned address `addr', and account it
+ * in the statistics. When the block is missing and `take_in' is true, it
+ * is taken into the cache; that is what happens on a read, while the
+ * cache is not write allocate, so a write does not take anything in.
+ * Return the index of the block, or -1 if it is missing and not taken in.
+ */
+static int access_block(hwaddr_t addr, bool take_in) {
+	int idx = probe(addr);
 
 	if(idx < 0) {
-		idx = fill(block);
 		cache_stat.miss ++;
 		cache_stat.cycles += CACHE_MISS_CYCLES;
+		if(take_in) {
+			idx = fill(addr);
+		}
 	}
 	else {
 		cache_stat.hit ++;
 		cache_stat.cycles += CACHE_HIT_CYCLES;
 	}
-
-	memcpy(data, cache[idx].data, CACHE_BLOCK_SIZE);
+	return idx;
 }
 
-/* Write `len' bytes of `data' at `addr', which does not cross the boundary
- * of a cache block. The bytes to write are the lowest `len' ones of `data'.
+/* Memory accessing interfaces of the cache. An access crossing the
+ * boundary of a cache block is done with two of the accesses above.
  */
-static void write_block(hwaddr_t addr, size_t len, uint32_t data) {
-	hwaddr_t block = addr & ~CACHE_BOFF_MASK;
-	uint32_t boff = addr & CACHE_BOFF_MASK;
-	int idx = probe(block);
 
-	if(idx < 0) {
-		/* The cache is not write allocate: a block is not taken in
-		 * just because a part of it is written. */
-		cache_stat.miss ++;
-		cache_stat.cycles += CACHE_MISS_CYCLES;
+uint32_t sram_read(hwaddr_t addr, size_t len) {
+	uint32_t offset = addr & CACHE_BOFF_MASK;
+	int idx;
+
+	if(offset + len > CACHE_BLOCK_SIZE) {
+		/* data cross the cache block boundary */
+		uint32_t len1 = CACHE_BLOCK_SIZE - offset;
+		uint32_t low = sram_read(addr, len1);
+		uint32_t high = sram_read(addr + len1, len - len1);
+		return low | (high << (len1 << 3));
 	}
-	else {
-		memcpy(cache[idx].data + boff, &data, len);
-		cache_stat.hit ++;
-		cache_stat.cycles += CACHE_HIT_CYCLES;
+
+	idx = access_block(addr & ~CACHE_BOFF_MASK, true);
+
+	/* The word the access starts in ends inside the block, since the
+	 * access itself ends inside it. */
+	return (unalign_rw(cache[idx].data + (offset & ~3u), 4) >> ((offset & 3) << 3))
+			& (~0u >> ((4 - len) << 3));
+}
+
+void sram_write(hwaddr_t addr, size_t len, uint32_t data) {
+	uint32_t offset = addr & CACHE_BOFF_MASK;
+	int idx;
+
+	if(offset + len > CACHE_BLOCK_SIZE) {
+		/* data cross the cache block boundary */
+		uint32_t len1 = CACHE_BLOCK_SIZE - offset;
+		sram_write(addr, len1, data);
+		sram_write(addr + len1, len - len1, data >> (len1 << 3));
+		return;
+	}
+
+	idx = access_block(addr & ~CACHE_BOFF_MASK, false);
+
+	if(idx >= 0) {
+		memcpy(cache[idx].data + offset, &data, len);
 	}
 
 	/* The cache is write through: DRAM always sees the write, so that
 	 * the block in the cache and the one in DRAM never differ. */
 	dram_write(addr, len, data);
-}
-
-/* Memory accessing interfaces of the cache. A read or a write crossing
- * the boundary of a cache block is done with two of the operations above.
- */
-
-uint32_t sram_read(hwaddr_t addr, size_t len) {
-	uint32_t offset = addr & CACHE_BOFF_MASK;
-	uint8_t temp[2 * CACHE_BLOCK_SIZE];
-
-	read_block(addr, temp);
-
-	if(offset + len > CACHE_BLOCK_SIZE) {
-		/* data cross the cache block boundary */
-		read_block(addr + CACHE_BLOCK_SIZE, temp + CACHE_BLOCK_SIZE);
-	}
-
-	return unalign_rw(temp + offset, 4) & (~0u >> ((4 - len) << 3));
-}
-
-void sram_write(hwaddr_t addr, size_t len, uint32_t data) {
-	uint32_t offset = addr & CACHE_BOFF_MASK;
-	uint8_t temp[2 * CACHE_BLOCK_SIZE];
-
-	memset(temp, 0, sizeof(temp));
-	*(uint32_t *)(temp + offset) = data;
-
-	if(offset + len > CACHE_BLOCK_SIZE) {
-		/* data cross the cache block boundary */
-		write_block(addr, CACHE_BLOCK_SIZE - offset, unalign_rw(temp + offset, 4));
-		write_block(addr + CACHE_BLOCK_SIZE - offset, len - (CACHE_BLOCK_SIZE - offset),
-				unalign_rw(temp + CACHE_BLOCK_SIZE, 4));
-	}
-	else {
-		write_block(addr, len, data);
-	}
 }
 
 void print_cache_stat() {

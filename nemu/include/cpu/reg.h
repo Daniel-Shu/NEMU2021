@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "../../../lib-common/x86-inc/cpu.h"	/* CR0, CR3 */
+#include "../../../lib-common/x86-inc/mmu.h"	/* SegDesc */
 
 enum { R_EAX, R_ECX, R_EDX, R_EBX, R_ESP, R_EBP, R_ESI, R_EDI };
 enum { R_AX, R_CX, R_DX, R_BX, R_SP, R_BP, R_SI, R_DI };
@@ -25,6 +26,11 @@ typedef struct {
 } Sreg;
 
 extern const char *sreg_name[];
+
+/* Read the descriptor the selector of a segment register points at from
+ * the GDT, and keep its base and limit in the register.
+ */
+void sreg_load(uint8_t sreg);
 
 /* Re-organize the `CPU_state' structure to match the register
  * encoding scheme in i386 instruction format: the i-th GPR is

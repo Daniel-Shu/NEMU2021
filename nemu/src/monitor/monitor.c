@@ -76,6 +76,7 @@ static void load_entry() {
 }
 
 void restart() {
+	int i;
 	/* Perform some initialization to restart a program */
 #ifdef USE_RAMDISK
 	/* Read the file with name `argv[1]' into ramdisk. */
@@ -91,6 +92,18 @@ void restart() {
 
 	/* Set the initial instruction pointer. */
 	cpu.eip = ENTRY_START;
+
+	/* CR0 is zero, so the machine starts in the real mode and no address
+	 * translation is done yet. The segments are given the whole linear
+	 * address space, which is what the kernel puts in its GDT anyway:
+	 * right after it turns the protection on, the next instruction is
+	 * still fetched through the %cs loaded here, and %cs is only given
+	 * its real descriptor later, by the ljmp that follows.
+	 */
+	for(i = 0; i < 6; i ++) {
+		cpu.sreg[i].base = 0;
+		cpu.sreg[i].limit = 0xffffffff;
+	}
 
 	/* Initialize DRAM. */
 	init_ddr3();

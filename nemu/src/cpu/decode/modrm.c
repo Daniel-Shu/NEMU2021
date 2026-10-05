@@ -30,6 +30,12 @@ int load_addr(swaddr_t eip, ModR_M *m, Operand *rm) {
 	}
 	else if(m->mod == 1) { disp_size = 1; }
 
+	/* An address that is based on %ebp or %esp is bound to the stack
+	 * segment, and every other one to the data segment. This is read
+	 * after the case above, where %ebp means there is no base at all.
+	 */
+	rm->sreg = (base_reg == R_EBP || base_reg == R_ESP) ? R_SS : R_DS;
+
 	instr_len = disp_offset;
 	if(disp_size != 0) {
 		/* has disp */
@@ -88,6 +94,7 @@ int read_ModR_M(swaddr_t eip, Operand *rm, Operand *reg) {
 	m.val = instr_fetch(eip, 1);
 	reg->type = OP_TYPE_REG;
 	reg->reg = m.reg;
+	rm->sreg = R_DS;		/* only meaningful for a memory operand */
 
 	if(m.mod == 3) {
 		rm->type = OP_TYPE_REG;

@@ -15,6 +15,11 @@ typedef struct {
 		int32_t simm;
 	};
 	uint32_t val;
+	/* The segment register a memory access through this operand is
+	 * bound to, as the i386 manual prescribes. It is worked out when
+	 * the addressing mode is decoded.
+	 */
+	uint8_t sreg;
 	char str[OP_STR_SIZE];
 } Operand;
 

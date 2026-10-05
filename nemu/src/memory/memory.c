@@ -38,7 +38,7 @@ lnaddr_t seg_translate(swaddr_t addr, size_t len, uint8_t sreg) {
 	 * here instead of letting an access run out of its segment. */
 	Assert(len == 0 || addr + len - 1 <= cpu.sreg[sreg].limit,
 			"access [0x%08x, 0x%08x) runs past the limit 0x%08x of %s",
-			addr, addr + len, cpu.sreg[sreg].limit, sreg_name[sreg]);
+			addr, (uint32_t)(addr + len), cpu.sreg[sreg].limit, sreg_name[sreg]);
 
 	return cpu.sreg[sreg].base + addr;
 }

@@ -3,7 +3,7 @@
 #define instr pop
 
 static void do_execute() {
-	DATA_TYPE val = MEM_R(reg_l(R_ESP));
+	DATA_TYPE val = MEM_R(reg_l(R_ESP), R_SS);
 	reg_l(R_ESP) += DATA_BYTE;
 	OPERAND_W(op_src, val);
 	print_asm_template1();

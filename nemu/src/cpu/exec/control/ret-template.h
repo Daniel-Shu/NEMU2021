@@ -4,7 +4,7 @@
 
 make_helper(concat(ret_n_, SUFFIX)) {
 	/* cpu_exec() will advance cpu.eip by the value we return here. */
-	cpu.eip = MEM_R(reg_l(R_ESP)) - 1;
+	cpu.eip = MEM_R(reg_l(R_ESP), R_SS) - 1;
 	reg_l(R_ESP) += DATA_BYTE;
 	print_asm("ret");
 	return 1;
@@ -12,7 +12,7 @@ make_helper(concat(ret_n_, SUFFIX)) {
 
 make_helper(concat(ret_i_, SUFFIX)) {
 	uint16_t num = instr_fetch(eip + 1, 2);
-	cpu.eip = MEM_R(reg_l(R_ESP)) - 3;
+	cpu.eip = MEM_R(reg_l(R_ESP), R_SS) - 3;
 	reg_l(R_ESP) += DATA_BYTE + num;
 	print_asm("ret $0x%x", num);
 	return 3;

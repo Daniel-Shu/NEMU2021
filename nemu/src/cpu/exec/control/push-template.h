@@ -6,10 +6,10 @@ static void do_execute() {
 	if (DATA_BYTE == 1) {
 		/* push ib: sign extend the immediate and push 4 bytes */
 		reg_l(R_ESP) -= 4;
-		swaddr_write(reg_l(R_ESP), 4, (uint32_t)(DATA_TYPE_S)op_src->val);
+		swaddr_write(reg_l(R_ESP), 4, (uint32_t)(DATA_TYPE_S)op_src->val, R_SS);
 	} else {
 		reg_l(R_ESP) -= DATA_BYTE;
-		MEM_W(reg_l(R_ESP), op_src->val);
+		MEM_W(reg_l(R_ESP), op_src->val, R_SS);
 	}
 	print_asm_template1();
 }

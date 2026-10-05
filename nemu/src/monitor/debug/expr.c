@@ -241,7 +241,7 @@ static uint32_t eval(int p, int q, bool *success) {
 		}
 		if(tokens[p].type == '*') {
 			/* pointer dereference */
-			return swaddr_read(eval(p + 1, q, success), 4);
+			return swaddr_read(eval(p + 1, q, success), 4, R_DS);
 		}
 		if(tokens[p].type == NOT) {
 			/* logical not */

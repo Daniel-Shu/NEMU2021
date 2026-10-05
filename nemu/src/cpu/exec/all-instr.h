@@ -35,6 +35,7 @@
 #include "control/jb.h"
 #include "control/jae.h"
 #include "control/call.h"
+#include "control/ljmp.h"
 #include "control/ret.h"
 #include "control/leave.h"
 #include "control/push.h"

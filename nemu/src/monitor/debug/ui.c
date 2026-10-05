@@ -58,6 +58,20 @@ static int cmd_info(char *args) {
 			printf("%-5s 0x%08x\n", regsl[i], reg_l(i));
 		}
 		printf("%-5s 0x%08x\n", "eip", cpu.eip);
+
+		/* The segment registers, with what the descriptors they point
+		 * at hold: an offset is added to the base of its segment
+		 * before it reaches the memory, and the limit is the largest
+		 * offset the segment accepts. The base of the GDT is a linear
+		 * address.
+		 */
+		printf("Segment  selector  base        limit\n");
+		for(i = 0; i < 6; i ++) {
+			printf("%-8s 0x%04x    0x%08x  0x%08x\n", sreg_name[i],
+					cpu.sreg[i].selector, cpu.sreg[i].base, cpu.sreg[i].limit);
+		}
+		printf("gdtr     base 0x%08x, limit 0x%04x\n", cpu.gdtr.base, cpu.gdtr.limit);
+		printf("cr0      0x%08x\n", cpu.cr0.val);
 	}
 	else if(strcmp(args, "w") == 0) {
 		display_wp();

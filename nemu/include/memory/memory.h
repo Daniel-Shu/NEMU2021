@@ -18,6 +18,7 @@ extern uint8_t *hw_mem;
 })
 
 lnaddr_t seg_translate(swaddr_t, size_t, uint8_t);
+hwaddr_t page_translate(lnaddr_t);
 
 uint32_t swaddr_read(swaddr_t, size_t, uint8_t);
 uint32_t lnaddr_read(lnaddr_t, size_t);

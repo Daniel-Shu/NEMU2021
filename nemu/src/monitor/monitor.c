@@ -11,6 +11,7 @@ void init_regex();
 void init_wp_pool();
 void init_ddr3();
 void init_cache();
+void init_tlb();
 
 FILE *log_fp = NULL;
 
@@ -110,4 +111,7 @@ void restart() {
 
 	/* Initialize the cache. All the blocks in it are invalid at first. */
 	init_cache();
+
+	/* Initialize the TLB, which starts out remembering nothing. */
+	init_tlb();
 }

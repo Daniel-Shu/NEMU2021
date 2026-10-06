@@ -1,5 +1,6 @@
 #include "common.h"
 #include "cpu/reg.h"
+#include "memory/tlb.h"
 
 uint32_t sram_read(hwaddr_t, size_t);
 void sram_write(hwaddr_t, size_t, uint32_t);
@@ -16,12 +17,62 @@ void hwaddr_write(hwaddr_t addr, size_t len, uint32_t data) {
 	sram_write(addr, len, data);
 }
 
+/* The translation done by the paging mechanism: the linear address is
+ * cut into the index of a page directory entry, the index of a page
+ * table entry and an offset within the page, and the physical page the
+ * two entries lead to is what the offset is added to.
+ *
+ * The walk is only done when the machine asks for it, and what it has
+ * already worked out is kept in the TLB, which the page directory and
+ * the page tables are read around.
+ */
+hwaddr_t page_translate(lnaddr_t addr) {
+	uint32_t ppn;
+	PDE pde;
+	PTE pte;
+
+	if(!(cpu.cr0.protect_enable && cpu.cr0.paging)) {
+		return addr;
+	}
+
+	if(tlb_lookup(addr, &ppn)) {
+		return (ppn << 12) | (addr & PAGE_MASK);
+	}
+
+	pde.val = hwaddr_read((cpu.cr3.page_directory_base << 12)
+			+ ((addr >> 22) << 2), 4);
+	Assert(pde.present, "the page directory entry of 0x%08x is not present", addr);
+
+	pte.val = hwaddr_read((pde.page_frame << 12) + (((addr >> 12) & 0x3ff) << 2), 4);
+	Assert(pte.present, "the page table entry of 0x%08x is not present", addr);
+
+	tlb_fill(addr, pte.page_frame);
+
+	return (pte.page_frame << 12) | (addr & PAGE_MASK);
+}
+
 uint32_t lnaddr_read(lnaddr_t addr, size_t len) {
-	return hwaddr_read(addr, len);
+	if((addr & PAGE_MASK) + len > PAGE_SIZE) {
+		/* data cross the page boundary: the two pages it spans are
+		 * translated one by one, since they need not be next to each
+		 * other in the physical memory */
+		uint32_t len1 = PAGE_SIZE - (addr & PAGE_MASK);
+		uint32_t low = hwaddr_read(page_translate(addr), len1);
+		uint32_t high = hwaddr_read(page_translate(addr + len1), len - len1);
+		return low | (high << (len1 << 3));
+	}
+	return hwaddr_read(page_translate(addr), len);
 }
 
 void lnaddr_write(lnaddr_t addr, size_t len, uint32_t data) {
-	hwaddr_write(addr, len, data);
+	if((addr & PAGE_MASK) + len > PAGE_SIZE) {
+		/* data cross the page boundary */
+		uint32_t len1 = PAGE_SIZE - (addr & PAGE_MASK);
+		hwaddr_write(page_translate(addr), len1, data);
+		hwaddr_write(page_translate(addr + len1), len - len1, data >> (len1 << 3));
+		return;
+	}
+	hwaddr_write(page_translate(addr), len, data);
 }
 
 /* The translation done by the segmentation mechanism: the base of the

@@ -85,10 +85,16 @@ typedef struct {
 		uint16_t limit;
 	} gdtr;
 
-	/* Only the PE bit of it is used, to tell the real mode and the
-	 * protected mode apart.
+	/* Only the PE and PG bits of it are used, to tell the real mode,
+	 * the protected mode and the paging apart.
 	 */
 	CR0 cr0;
+
+	/* The physical address of the page directory the page walk starts
+	 * from. Writing it throws away what the TLB remembers, since those
+	 * translations belong to the page directory being left behind.
+	 */
+	CR3 cr3;
 
 	/* The order follows the encoding of the segment registers. */
 	union {

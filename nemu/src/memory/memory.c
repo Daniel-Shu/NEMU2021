@@ -26,6 +26,18 @@ void hwaddr_write(hwaddr_t addr, size_t len, uint32_t data) {
  * already worked out is kept in the TLB, which the page directory and
  * the page tables are read around.
  */
+bool page_walk(lnaddr_t addr, PDE *pde, PTE *pte) {
+	pde->val = hwaddr_read((cpu.cr3.page_directory_base << 12)
+			+ ((addr >> 22) << 2), 4);
+	if(!pde->present) {
+		return false;
+	}
+
+	pte->val = hwaddr_read((pde->page_frame << 12)
+			+ (((addr >> 12) & 0x3ff) << 2), 4);
+	return pte->present;
+}
+
 hwaddr_t page_translate(lnaddr_t addr) {
 	uint32_t ppn;
 	PDE pde;
@@ -39,12 +51,15 @@ hwaddr_t page_translate(lnaddr_t addr) {
 		return (ppn << 12) | (addr & PAGE_MASK);
 	}
 
-	pde.val = hwaddr_read((cpu.cr3.page_directory_base << 12)
-			+ ((addr >> 22) << 2), 4);
-	Assert(pde.present, "the page directory entry of 0x%08x is not present", addr);
-
-	pte.val = hwaddr_read((pde.page_frame << 12) + (((addr >> 12) & 0x3ff) << 2), 4);
-	Assert(pte.present, "the page table entry of 0x%08x is not present", addr);
+	if(!page_walk(addr, &pde, &pte)) {
+		/* The protection the entries describe is not simulated, so
+		 * complain here instead: an entry that is not present means
+		 * either the page was never mapped, or something is wrong. */
+		if(!pde.present) {
+			panic("the page directory entry of 0x%08x is not present", addr);
+		}
+		panic("the page table entry of 0x%08x is not present", addr);
+	}
 
 	tlb_fill(addr, pte.page_frame);
 

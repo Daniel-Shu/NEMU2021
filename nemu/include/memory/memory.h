@@ -2,6 +2,7 @@
 #define __MEMORY_H__
 
 #include "common.h"
+#include "../../../lib-common/x86-inc/mmu.h"	/* PDE, PTE */
 
 #define HW_MEM_SIZE (128 * 1024 * 1024)
 
@@ -19,6 +20,12 @@ extern uint8_t *hw_mem;
 
 lnaddr_t seg_translate(swaddr_t, size_t, uint8_t);
 hwaddr_t page_translate(lnaddr_t);
+
+/* Walk the page directory and the page table of `addr', and hand back
+ * what the two entries hold. Return false when one of them is not
+ * present, in which case the caller decides what to do about it.
+ */
+bool page_walk(lnaddr_t, PDE *, PTE *);
 
 uint32_t swaddr_read(swaddr_t, size_t, uint8_t);
 uint32_t lnaddr_read(lnaddr_t, size_t);

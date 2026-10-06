@@ -131,6 +131,43 @@ static int cmd_x(char *args) {
 	return 0;
 }
 
+static int cmd_page(char *args) {
+	if(args == NULL) {
+		printf("Usage: page ADDR\n");
+		return 0;
+	}
+
+	bool success;
+	uint32_t addr = expr(args, &success);
+	if(!success) {
+		return 0;
+	}
+
+	if(!(cpu.cr0.protect_enable && cpu.cr0.paging)) {
+		printf("paging is off, the address is used as it is\n");
+		return 0;
+	}
+
+	PDE pde;
+	PTE pte;
+	if(!page_walk(addr, &pde, &pte)) {
+		if(!pde.present) {
+			printf("the page directory entry of 0x%08x is not present\n", addr);
+		}
+		else {
+			printf("the page table entry of 0x%08x is not present\n", addr);
+		}
+		return 0;
+	}
+
+	printf("virtual  0x%08x\n", addr);
+	printf("physical 0x%08x\n", (pte.page_frame << 12) | (addr & PAGE_MASK));
+	printf("  page directory  index 0x%03x, entry 0x%08x\n", addr >> 22, pde.val);
+	printf("  page table      index 0x%03x, entry 0x%08x\n", (addr >> 12) & 0x3ff, pte.val);
+	printf("  offset          0x%03x\n", addr & PAGE_MASK);
+	return 0;
+}
+
 static int cmd_p(char *args) {
 	if(args == NULL) {
 		printf("Usage: p EXPR\n");
@@ -161,6 +198,7 @@ static struct {
 	{ "si", "Run N instructions", cmd_si },
 	{ "info", "Print the register status (subcommand: r|w)", cmd_info },
 	{ "x", "Examine memory (x N EXPR)", cmd_x },
+	{ "page", "Show the page translation of an address (page ADDR)", cmd_page },
 	{ "p", "Evaluate an expression", cmd_p },
 	{ "w", "Set a watchpoint (w EXPR)", cmd_w },
 	{ "d", "Delete a watchpoint (d N)", cmd_d },

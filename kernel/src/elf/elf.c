@@ -82,9 +82,9 @@ uint32_t loader() {
 #ifdef IA32_PAGE
 	mm_malloc(KOFFSET - STACK_SIZE, STACK_SIZE);
 
-#ifdef HAS_DEVICE
+	/* The video memory has to be reachable from the address space that
+	 * is about to be switched to. */
 	create_video_mapping();
-#endif
 
 	write_cr3(get_ucr3());
 #endif

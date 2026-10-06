@@ -9,7 +9,7 @@ testcase_START_OBJ := $(testcase_OBJ_DIR)/start.o
 # The testcases are loaded by the kernel, so they are linked above the
 # kernel to avoid overwriting it. The entry is `main', since the code
 # in start.S is never executed after the kernel is introduced.
-testcase_LDFLAGS := -m elf_i386 -e main -Ttext-segment=0x00800000
+testcase_LDFLAGS := -m elf_i386 -e main
 
 $(testcase_BIN): % : $(testcase_START_OBJ) %.o $(FLOAT) $(LIBC)
 	$(call make_command, $(LD), $(testcase_LDFLAGS), ld $@, $^)

@@ -42,17 +42,29 @@ uint32_t loader() {
 		/* Scan the program header table, load each segment into memory */
 		if(ph->p_type == PT_LOAD) {
 
+			/* The p_vaddr of the segment is a virtual address of the
+			 * user process, which is not in the address space of the
+			 * kernel, so the kernel cannot write there directly. Ask
+			 * for a physical range of the same length instead, and
+			 * let the page directory and the page tables of the user
+			 * process be filled in so that p_vaddr leads to it.
+			 * What comes back is that physical range, which the
+			 * kernel can reach because it is also mapped below
+			 * KOFFSET.
+			 */
+			uint32_t pa = mm_malloc(ph->p_vaddr, ph->p_memsz);
+
 			/* Read the content of the segment from the ELF file
 			 * to the memory region [VirtAddr, VirtAddr + FileSiz)
 			 */
-			ramdisk_read((void *)(ph->p_vaddr),
+			ramdisk_read((void *)pa,
 					ELF_OFFSET_IN_DISK + ph->p_offset, ph->p_filesz);
 
 
 			/* Zero the memory region
 			 * [VirtAddr + FileSiz, VirtAddr + MemSiz)
 			 */
-			memset((void *)(ph->p_vaddr + ph->p_filesz), 0,
+			memset((void *)(pa + ph->p_filesz), 0,
 					ph->p_memsz - ph->p_filesz);
 
 

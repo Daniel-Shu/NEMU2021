@@ -72,6 +72,9 @@ static int cmd_info(char *args) {
 		}
 		printf("gdtr     base 0x%08x, limit 0x%04x\n", cpu.gdtr.base, cpu.gdtr.limit);
 		printf("cr0      0x%08x\n", cpu.cr0.val);
+		/* The page directory a page walk starts from, which is a
+		 * physical address. */
+		printf("cr3      0x%08x\n", cpu.cr3.val);
 	}
 	else if(strcmp(args, "w") == 0) {
 		display_wp();

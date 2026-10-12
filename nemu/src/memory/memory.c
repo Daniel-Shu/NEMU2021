@@ -1,19 +1,32 @@
 #include "common.h"
 #include "cpu/reg.h"
 #include "memory/tlb.h"
+#include "device/mmio.h"
 
 uint32_t sram_read(hwaddr_t, size_t);
 void sram_write(hwaddr_t, size_t, uint32_t);
 
-/* Memory accessing interfaces. The CPU talks to the cache, and DRAM is
- * only accessed when the cache misses.
+/* Memory accessing interfaces. A physical address that a device has
+ * mapped into the memory space belongs to that device and is not to be
+ * cached, since what it holds is not the only copy of it: the device may
+ * change it without the machine writing anything. Every other access goes
+ * to the cache, and DRAM is only reached when the cache misses.
  */
 
 uint32_t hwaddr_read(hwaddr_t addr, size_t len) {
+	int map_no = is_mmio(addr);
+	if(map_no != -1) {
+		return mmio_read(addr, len, map_no);
+	}
 	return sram_read(addr, len);
 }
 
 void hwaddr_write(hwaddr_t addr, size_t len, uint32_t data) {
+	int map_no = is_mmio(addr);
+	if(map_no != -1) {
+		mmio_write(addr, len, data, map_no);
+		return;
+	}
 	sram_write(addr, len, data);
 }
 

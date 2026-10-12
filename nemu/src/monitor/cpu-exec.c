@@ -1,6 +1,8 @@
 #include "monitor/monitor.h"
 #include "monitor/watchpoint.h"
 #include "cpu/helper.h"
+#include "cpu/intr.h"
+#include "device/i8259.h"
 #include <setjmp.h>
 
 /* The assembly code of instructions executed is only output to the screen
@@ -83,6 +85,19 @@ void cpu_exec(volatile uint32_t n) {
 #endif
 
 		if(nemu_state != RUNNING) { return; }
+
+		/* The pin of the processor is only looked at where an
+		 * instruction ends: a device raises an interrupt whenever it
+		 * wants to, but it is taken between two instructions, and only
+		 * when the interrupt flag lets it through. The controller is
+		 * told the request has been taken so that it can put the next
+		 * one it is holding on the pin.
+		 */
+		if(cpu.INTR && cpu.eflags.IF) {
+			uint32_t intr_no = i8259_query_intr();
+			i8259_ack_intr();
+			raise_intr(intr_no);
+		}
 	}
 
 	if(nemu_state == RUNNING) { nemu_state = STOP; }

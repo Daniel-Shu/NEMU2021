@@ -11,12 +11,26 @@ void sram_write(hwaddr_t, size_t, uint32_t);
  * cached, since what it holds is not the only copy of it: the device may
  * change it without the machine writing anything. Every other access goes
  * to the cache, and DRAM is only reached when the cache misses.
+ *
+ * What a device takes in one go is one, two or four bytes. A wider access
+ * than that only comes from one that was cut at a page boundary, and it
+ * is taken apart into bytes here, which a device that maps memory, the
+ * video memory, reads and writes the same way.
  */
 
 uint32_t hwaddr_read(hwaddr_t addr, size_t len) {
 	int map_no = is_mmio(addr);
 	if(map_no != -1) {
-		return mmio_read(addr, len, map_no);
+		if(len == 1 || len == 2 || len == 4) {
+			return mmio_read(addr, len, map_no);
+		}
+
+		uint32_t data = 0;
+		size_t i;
+		for(i = 0; i < len; i ++) {
+			data |= mmio_read(addr + i, 1, map_no) << (i << 3);
+		}
+		return data;
 	}
 	return sram_read(addr, len);
 }
@@ -24,7 +38,15 @@ uint32_t hwaddr_read(hwaddr_t addr, size_t len) {
 void hwaddr_write(hwaddr_t addr, size_t len, uint32_t data) {
 	int map_no = is_mmio(addr);
 	if(map_no != -1) {
-		mmio_write(addr, len, data, map_no);
+		if(len == 1 || len == 2 || len == 4) {
+			mmio_write(addr, len, data, map_no);
+			return;
+		}
+
+		size_t i;
+		for(i = 0; i < len; i ++) {
+			mmio_write(addr + i, 1, data >> (i << 3), map_no);
+		}
 		return;
 	}
 	sram_write(addr, len, data);

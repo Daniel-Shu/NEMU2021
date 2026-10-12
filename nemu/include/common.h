@@ -1,7 +1,9 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#define USE_RAMDISK
+/* The ramdisk is retired as soon as the disk driver works, since the
+ * program is read from the disk from then on. */
+//#define USE_RAMDISK
 
 /* You will define this macro in PA4 */
 #define HAS_DEVICE

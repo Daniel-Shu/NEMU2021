@@ -5,6 +5,7 @@
 void add_irq_handle(int, void (*)(void));
 uint32_t mm_brk(uint32_t);
 int fs_ioctl(int, uint32_t, void *);
+void serial_printc(char);
 
 static void sys_brk(TrapFrame *tf) {
 	tf->eax = mm_brk(tf->ebx);
@@ -25,13 +26,23 @@ static void sys_write(TrapFrame *tf) {
 		return;
 	}
 
-	/* NEMU has no device to print on yet, so the trap instruction is
-	 * used as a way out: the monitor prints the `count' bytes at `buf'
-	 * when %eax says so. The address in %ecx is a virtual one, which
-	 * the kernel cannot go through, but NEMU translates it the way it
-	 * does for the program itself.
+#ifdef HAS_DEVICE
+	/* The screen is the serial port, the device that stands for it. The
+	 * kernel is monolithic: it is mapped into the address space of the
+	 * user process and runs with it switched in, so the buffer can be
+	 * read through the address the process gave.
+	 */
+	uint32_t i;
+	for (i = 0; i < tf->edx; i ++) {
+		serial_printc(((char *)tf->ecx)[i]);
+	}
+#else
+	/* Without a device to print on, the trap instruction is a way out:
+	 * the monitor prints the `count' bytes at `buf' when %eax says so.
+	 * It translates the address the way it does for the program itself.
 	 */
 	asm volatile (".byte 0xd6" : : "a"(2), "c"(tf->ecx), "d"(tf->edx));
+#endif
 
 	/* The amount of bytes written is the amount that was asked for. */
 	tf->eax = tf->edx;

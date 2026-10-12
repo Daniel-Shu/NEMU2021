@@ -11,6 +11,15 @@ void ide_read(uint8_t *, uint32_t, uint32_t);
 void ramdisk_read(uint8_t *, uint32_t, uint32_t);
 #endif
 
+/* Once the disk driver works the program is read from the disk, and the
+ * ramdisk is of no use any more.
+ */
+#ifdef HAS_DEVICE
+#define load_read ide_read
+#else
+#define load_read ramdisk_read
+#endif
+
 #define STACK_SIZE (1 << 20)
 
 void create_video_mapping();
@@ -22,11 +31,7 @@ uint32_t loader() {
 
 	uint8_t buf[4096];
 
-#ifdef HAS_DEVICE
-	ide_read(buf, ELF_OFFSET_IN_DISK, 4096);
-#else
-	ramdisk_read(buf, ELF_OFFSET_IN_DISK, 4096);
-#endif
+	load_read(buf, ELF_OFFSET_IN_DISK, 4096);
 
 	elf = (void*)buf;
 
@@ -57,7 +62,7 @@ uint32_t loader() {
 			/* Read the content of the segment from the ELF file
 			 * to the memory region [VirtAddr, VirtAddr + FileSiz)
 			 */
-			ramdisk_read((void *)pa,
+			load_read((void *)pa,
 					ELF_OFFSET_IN_DISK + ph->p_offset, ph->p_filesz);
 
 

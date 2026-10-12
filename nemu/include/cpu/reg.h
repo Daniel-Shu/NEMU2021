@@ -85,6 +85,15 @@ typedef struct {
 		uint16_t limit;
 	} gdtr;
 
+	/* The base and the limit of the IDT. The base is a linear address
+	 * as well, so a gate descriptor is read without segment translation
+	 * while the page translation is still performed on it.
+	 */
+	struct {
+		uint32_t base;
+		uint16_t limit;
+	} idtr;
+
 	/* Only the PE and PG bits of it are used, to tell the real mode,
 	 * the protected mode and the paging apart.
 	 */

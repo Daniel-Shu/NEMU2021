@@ -11,7 +11,13 @@
  */
 make_helper(hlt) {
 	while(!(cpu.INTR && cpu.eflags.IF)) {
-		/* The devices raise their interrupts while this runs. */
+		/* The devices raise their interrupts while this runs, so what
+		 * the condition holds has to be read from the memory again on
+		 * every pass. The compiler sees nothing in here that writes
+		 * it, and would otherwise be free to keep the two of them in
+		 * registers and spin forever.
+		 */
+		asm volatile ("" ::: "memory");
 	}
 
 	print_asm("hlt");

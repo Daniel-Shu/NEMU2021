@@ -33,8 +33,8 @@ void raise_intr(uint8_t NO) {
 
 	/* The three registers are saved before the handler is jumped to,
 	 * the flags first, so that the instruction pointer ends up on the
-	 * top of the stack, where the handler expects to read the #irq from
-	 * and where iret takes it from.
+	 * top of the stack, which is the order iret expects to read them
+	 * back in.
 	 */
 	reg_l(R_ESP) -= 4;
 	swaddr_write(reg_l(R_ESP), 4, cpu.eflags.val, R_SS);

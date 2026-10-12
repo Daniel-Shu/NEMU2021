@@ -2,11 +2,10 @@
 
 /* 0xcf: iret
  * The three dwords an interrupt handler leaves on the stack are taken
- * back into the instruction pointer, the code segment and the flags.
- * The new code segment comes with its descriptor, which has to be read
- * from the GDT again, so the instruction pointer is put in place after
- * the code segment, since reading the descriptor may need the GDT to be
- * reached through the segment registers.
+ * back into the instruction pointer, the code segment and the flags, in
+ * the reverse of the order they were saved in. As with every other load
+ * of a segment register, the descriptor the new selector points at is
+ * read from the GDT along with it.
  */
 make_helper(iret) {
 	/* cpu_exec() adds the returned length to cpu.eip, so the value

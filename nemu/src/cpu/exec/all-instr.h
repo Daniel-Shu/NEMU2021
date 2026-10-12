@@ -41,6 +41,10 @@
 #include "control/leave.h"
 #include "control/push.h"
 #include "control/pop.h"
+#include "control/pusha.h"
+#include "control/popa.h"
+#include "control/int.h"
+#include "control/iret.h"
 
 #include "logic/and.h"
 #include "logic/test.h"
@@ -55,6 +59,8 @@
 #include "logic/sete.h"
 #include "logic/std.h"
 #include "logic/setne.h"
+#include "logic/cli.h"
+#include "logic/sti.h"
 
 #include "string/rep.h"
 #include "string/lods.h"

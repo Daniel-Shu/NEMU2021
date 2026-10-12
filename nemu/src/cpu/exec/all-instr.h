@@ -6,6 +6,8 @@
 #include "data-mov/cltd.h"
 #include "data-mov/lgdt.h"
 #include "data-mov/lidt.h"
+#include "data-mov/in.h"
+#include "data-mov/out.h"
 #include "data-mov/movcr.h"
 #include "data-mov/movsreg.h"
 #include "arith/add.h"

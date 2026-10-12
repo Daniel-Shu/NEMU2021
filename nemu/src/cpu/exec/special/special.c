@@ -1,5 +1,6 @@
 #include "cpu/exec/helper.h"
 #include "monitor/monitor.h"
+#include "memory/memory.h"
 #include "memory/cache.h"
 
 make_helper(inv) {
@@ -30,6 +31,20 @@ make_helper(nemu_trap) {
 
 	switch(cpu.eax) {
 		case 2:
+			/* The kernel has no device to print on yet, so it hands
+			 * what a program asked to write over to the monitor
+			 * instead: %ecx is the address of the bytes and %edx the
+			 * amount of them. It is a virtual address, so the bytes
+			 * are read the way an access of the program itself would
+			 * be translated.
+			 */
+			{
+				int i;
+				for (i = 0; i < cpu.edx; i ++) {
+					putc(lnaddr_read(cpu.ecx + i, 1), stdout);
+				}
+				fflush(stdout);
+			}
 		   	break;
 
 		default:

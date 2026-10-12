@@ -5,6 +5,11 @@
 void add_irq_handle(int, void (*)(void));
 uint32_t mm_brk(uint32_t);
 int fs_ioctl(int, uint32_t, void *);
+int fs_open(const char *, int);
+int fs_read(int, void *, int);
+int fs_write(int, void *, int);
+int fs_lseek(int, int, int);
+int fs_close(int);
 void serial_printc(char);
 
 static void sys_brk(TrapFrame *tf) {
@@ -15,37 +20,48 @@ static void sys_ioctl(TrapFrame *tf) {
 	tf->eax = fs_ioctl(tf->ebx, tf->ecx, (void *)tf->edx);
 }
 
-/* write(fd, buf, count): a program prints through the first two file
- * descriptors, which both stand for the screen here. The other ones are
- * not supported, and are turned down the way a system call reports a
- * failure.
+/* The buffers the system calls are given belong to the user process. The
+ * kernel is monolithic: it is mapped into the address space of the
+ * process and runs with it switched in, so those addresses are read the
+ * way the process itself reads them.
+ */
+
+static void sys_open(TrapFrame *tf) {
+	tf->eax = fs_open((char *)tf->ebx, tf->ecx);
+}
+
+static void sys_read(TrapFrame *tf) {
+	tf->eax = fs_read(tf->ebx, (void *)tf->ecx, tf->edx);
+}
+
+/* write(fd, buf, count): where the bytes go is the business of the file
+ * system, which knows that the first two descriptors stand for the
+ * screen and the rest for the files of the disk.
  */
 static void sys_write(TrapFrame *tf) {
+#ifdef HAS_DEVICE
+	tf->eax = fs_write(tf->ebx, (void *)tf->ecx, tf->edx);
+#else
+	/* Without devices there is no disk and nothing but the screen is
+	 * left: the trap instruction asks the monitor to print the `count'
+	 * bytes at `buf' when %eax says so.
+	 */
 	if (tf->ebx != 1 && tf->ebx != 2) {
 		tf->eax = -1;
 		return;
 	}
 
-#ifdef HAS_DEVICE
-	/* The screen is the serial port, the device that stands for it. The
-	 * kernel is monolithic: it is mapped into the address space of the
-	 * user process and runs with it switched in, so the buffer can be
-	 * read through the address the process gave.
-	 */
-	uint32_t i;
-	for (i = 0; i < tf->edx; i ++) {
-		serial_printc(((char *)tf->ecx)[i]);
-	}
-#else
-	/* Without a device to print on, the trap instruction is a way out:
-	 * the monitor prints the `count' bytes at `buf' when %eax says so.
-	 * It translates the address the way it does for the program itself.
-	 */
 	asm volatile (".byte 0xd6" : : "a"(2), "c"(tf->ecx), "d"(tf->edx));
-#endif
-
-	/* The amount of bytes written is the amount that was asked for. */
 	tf->eax = tf->edx;
+#endif
+}
+
+static void sys_lseek(TrapFrame *tf) {
+	tf->eax = fs_lseek(tf->ebx, tf->ecx, tf->edx);
+}
+
+static void sys_close(TrapFrame *tf) {
+	tf->eax = fs_close(tf->ebx);
 }
 
 void do_syscall(TrapFrame *tf) {
@@ -63,7 +79,11 @@ void do_syscall(TrapFrame *tf) {
 
 		case SYS_brk: sys_brk(tf); break;
 		case SYS_ioctl: sys_ioctl(tf); break;
+		case SYS_open: sys_open(tf); break;
+		case SYS_read: sys_read(tf); break;
 		case SYS_write: sys_write(tf); break;
+		case SYS_lseek: sys_lseek(tf); break;
+		case SYS_close: sys_close(tf); break;
 
 		default: panic("Unhandled system call: id = %d, eip = 0x%08x", tf->eax, tf->eip);
 	}

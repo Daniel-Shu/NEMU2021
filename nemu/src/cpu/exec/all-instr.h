@@ -61,6 +61,7 @@
 #include "logic/shrd.h"
 #include "logic/cld.h"
 #include "logic/sete.h"
+#include "logic/bt.h"
 #include "logic/std.h"
 #include "logic/setne.h"
 #include "logic/cli.h"

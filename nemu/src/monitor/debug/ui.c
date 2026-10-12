@@ -71,6 +71,10 @@ static int cmd_info(char *args) {
 					cpu.sreg[i].selector, cpu.sreg[i].base, cpu.sreg[i].limit);
 		}
 		printf("gdtr     base 0x%08x, limit 0x%04x\n", cpu.gdtr.base, cpu.gdtr.limit);
+		/* The table of the entry points an exception or an interrupt is
+		 * taken to. Its base is a linear address as well.
+		 */
+		printf("idtr     base 0x%08x, limit 0x%04x\n", cpu.idtr.base, cpu.idtr.limit);
 		printf("cr0      0x%08x\n", cpu.cr0.val);
 		/* The page directory a page walk starts from, which is a
 		 * physical address. */

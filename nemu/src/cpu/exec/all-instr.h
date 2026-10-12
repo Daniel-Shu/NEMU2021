@@ -60,10 +60,9 @@
 #include "logic/shr.h"
 #include "logic/shrd.h"
 #include "logic/cld.h"
-#include "logic/sete.h"
 #include "logic/bt.h"
 #include "logic/std.h"
-#include "logic/setne.h"
+#include "logic/setcc.h"
 #include "logic/cli.h"
 #include "logic/sti.h"
 

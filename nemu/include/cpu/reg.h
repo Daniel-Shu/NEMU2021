@@ -54,7 +54,15 @@ typedef struct {
      };
 
      swaddr_t eip;
-     
+
+	/* The INTR pin of the processor. It is set by the interrupt
+	 * controller as soon as one of the devices raises an interrupt, and
+	 * is only looked at after an instruction when the interrupt flag of
+	 * eflags allows it. It is not a register the instructions can name,
+	 * but it is part of the state of the processor all the same.
+	 */
+	bool INTR;
+
      union {
 		struct {
 			uint32_t CF		:1;

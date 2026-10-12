@@ -14,40 +14,6 @@ static const int keycode_array[] = {
 
 static int key_state[NR_KEYS];
 
-/* The states a key goes through are: it is pressed and the game has not
- * been told yet (PRESS), the game knows about it and the key is still
- * held down (WAIT_RELEASE), it is let go of and the game has not been
- * told yet (RELEASE), and finally there is nothing to say about it
- * (EMPTY).
- */
-
-void
-keyboard_event(void) {
-	int i;
-	int scancode = in_byte(0x60);
-
-	/* The keyboard only tells that a key was let go of by sending its
-	 * make code with the highest bit set. */
-	int released = (scancode & 0x80) != 0;
-
-	for (i = 0; i < NR_KEYS; i ++) {
-		if(get_keycode(i) != (scancode & 0x7f)) {
-			continue;
-		}
-
-		if(released) {
-			key_state[i] = KEY_STATE_RELEASE;
-		}
-		else if(query_key(i) == KEY_STATE_EMPTY) {
-			/* The keyboard sends the make code over and over for as long
-			 * as the key is held down, and only the first one of them is
-			 * a press: the game is written for a keyboard that does not
-			 * repeat itself. */
-			key_state[i] = KEY_STATE_PRESS;
-		}
-	}
-}
-
 static inline int
 get_keycode(int index) {
 	assert(index >= 0 && index < NR_KEYS);
@@ -70,6 +36,40 @@ static inline void
 clear_key(int index) {
 	assert(index >= 0 && index < NR_KEYS);
 	key_state[index] = KEY_STATE_EMPTY;
+}
+
+/* The states a key goes through are: it is pressed and the game has not
+ * been told yet (PRESS), the game knows about it and the key is still
+ * held down (WAIT_RELEASE), it is let go of and the game has not been
+ * told yet (RELEASE), and finally there is nothing to say about it
+ * (EMPTY).
+ */
+
+void
+keyboard_event(void) {
+	int i;
+	int scancode = in_byte(0x60);
+
+	/* The keyboard only tells that a key was let go of by sending the
+	 * make code of the key with the highest bit set. */
+	int released = (scancode & 0x80) != 0;
+
+	for (i = 0; i < NR_KEYS; i ++) {
+		if(get_keycode(i) != (scancode & 0x7f)) {
+			continue;
+		}
+
+		if(released) {
+			key_state[i] = KEY_STATE_RELEASE;
+		}
+		else if(query_key(i) == KEY_STATE_EMPTY) {
+			/* The keyboard sends the make code over and over for as long
+			 * as the key is held down, and only the first one of them is
+			 * a press: the game is written for a keyboard that does not
+			 * repeat itself. */
+			key_state[i] = KEY_STATE_PRESS;
+		}
+	}
 }
 
 bool

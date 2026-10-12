@@ -24,12 +24,19 @@ timer_event(void) {
 }
 
 uint32_t SDL_GetTicks() {
-	/* TODO: Return the time in millisecond. */
-	assert(0);
-	return 0;
+	/* jiffy counts the interrupts the timer of the machine has raised,
+	 * and it raises HZ of them every second, so this is the number of
+	 * milliseconds the game has been running for. */
+	return jiffy * (1000 / HZ);
 }
 
 void SDL_Delay(uint32_t ms) {
-	/* TODO: Return from this function after waiting for `ms' milliseconds. */
-	assert(0);
+	uint32_t end = SDL_GetTicks() + ms;
+
+	/* The clock only moves on while the processor is idle and the
+	 * interrupts are let in, so there is nothing else to do than wait
+	 * for the next of them until enough time has gone by. */
+	while(SDL_GetTicks() < end) {
+		wait_intr();
+	}
 }

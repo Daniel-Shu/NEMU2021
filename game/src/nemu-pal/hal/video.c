@@ -24,24 +24,34 @@ void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect,
 		dstrect->h = h;
 	}
 
-	/* TODO: copy pixels from position (`sx', `sy') with size
-	 * `w' X `h' of `src' surface to position (`dx', `dy') of
-	 * `dst' surface.
+	/* A pixel takes one byte in the surfaces the game uses, which are
+	 * all 8 bits deep, and the pitch says how far apart two rows of one
+	 * surface are, so a row of pixels is a plain copy of bytes.
 	 */
-
-	assert(0);
+	int i;
+	for(i = 0; i < h; i ++) {
+		memcpy(dst->pixels + (dy + i) * dst->pitch + dx,
+				src->pixels + (sy + i) * src->pitch + sx, w);
+	}
 }
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
 	assert(dst);
 	assert(color <= 0xff);
 
-	/* TODO: Fill the rectangle area described by `dstrect'
-	 * in surface `dst' with color `color'. If dstrect is
-	 * NULL, fill the whole surface.
-	 */
+	/* A rectangle that is not given is the whole surface, and one that
+	 * runs over the far side of it is cut short there. */
+	int dx = (dstrect == NULL ? 0 : dstrect->x);
+	int dy = (dstrect == NULL ? 0 : dstrect->y);
+	int w = (dstrect == NULL ? dst->w : dstrect->w);
+	int h = (dstrect == NULL ? dst->h : dstrect->h);
+	if(dst->w - dx < w) { w = dst->w - dx; }
+	if(dst->h - dy < h) { h = dst->h - dy; }
 
-	assert(0);
+	int i;
+	for(i = 0; i < h; i ++) {
+		memset(dst->pixels + (dy + i) * dst->pitch + dx, color, w);
+	}
 }
 
 void SDL_SetPalette(SDL_Surface *s, int flags, SDL_Color *colors, 
@@ -69,8 +79,13 @@ void SDL_SetPalette(SDL_Surface *s, int flags, SDL_Color *colors,
 	memcpy(s->format->palette->colors, colors, sizeof(SDL_Color) * ncolors);
 
 	if(s->flags & SDL_HWSURFACE) {
-		/* TODO: Set the VGA palette by calling write_palette(). */
-		assert(0);
+		/* The palette of a surface the hardware shows is kept by the
+		 * hardware itself, and the VGA is written to through the
+		 * palette registers. A software surface only needs the copy
+		 * that was just made for it, the game applies it when the
+		 * surface is drawn on the screen.
+		 */
+		write_palette(s->format->palette->colors, ncolors);
 	}
 }
 
